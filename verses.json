@@ -1,0 +1,37 @@
+[
+  {
+    "id": "john-3-16",
+    "title": "God's Love",
+    "reference": "John 3:16",
+    "translation": "ESV",
+    "text": "For God so loved the world, that he gave his only Son, that whoever believes in him should not perish but have eternal life."
+  },
+  {
+    "id": "phil-4-6-7",
+    "title": "Do Not Be Anxious",
+    "reference": "Philippians 4:6-7",
+    "translation": "ESV",
+    "text": "Do not be anxious about anything, but in everything by prayer and supplication with thanksgiving let your requests be made known to God. And the peace of God, which surpasses all understanding, will guard your hearts and your minds in Christ Jesus."
+  },
+  {
+    "id": "psalm-119-11",
+    "title": "Treasure the Word",
+    "reference": "Psalm 119:11",
+    "translation": "ESV",
+    "text": "I have stored up your word in my heart, that I might not sin against you."
+  },
+  {
+    "id": "rom-12-2",
+    "title": "Be Transformed",
+    "reference": "Romans 12:2",
+    "translation": "ESV",
+    "text": "Do not be conformed to this world, but be transformed by the renewal of your mind, that by testing you may discern what is the will of God, what is good and acceptable and perfect."
+  },
+  {
+    "id": "prov-3-5-6",
+    "title": "Trust in the Lord",
+    "reference": "Proverbs 3:5-6",
+    "translation": "ESV",
+    "text": "Trust in the Lord with all your heart, and do not lean on your own understanding. In all your ways acknowledge him, and he will make straight your paths."
+  }
+]
