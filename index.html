@@ -103,6 +103,7 @@
     };
 
     const state = {
+      groups: [],
       verses: [],
       current: null,
       mode: "reference", // "reference" | "prefix"
@@ -121,7 +122,70 @@
       return list[Math.floor(Math.random() * list.length)];
     }
 
+    function toGroupName(fileName) {
+      return fileName
+        .replace(/\.json$/i, "")
+        .replace(/^verses[-_]?/i, "")
+        .replace(/[-_]+/g, " ")
+        .trim() || "未命名分组";
+    }
+
+    async function scanVerseGroupFiles() {
+      const res = await fetch("./verses/");
+      if (!res.ok) throw new Error("scan folder fail");
+      const html = await res.text();
+      const doc = new DOMParser().parseFromString(html, "text/html");
+      const links = Array.from(doc.querySelectorAll("a"));
+      const files = links
+        .map((a) => decodeURIComponent(a.getAttribute("href") || "").trim())
+        .filter((href) => href.toLowerCase().endsWith(".json"))
+        .filter((href) => !href.includes("/"))
+        .sort();
+
+      if (!files.length) throw new Error("no json file in verses folder");
+
+      return files.map((file) => ({
+        name: toGroupName(file),
+        file: `verses/${file}`
+      }));
+    }
+
+    async function loadVersesFromFile(file) {
+      const res = await fetch(`./${file}`);
+      if (!res.ok) throw new Error(`load fail: ${file}`);
+      const data = await res.json();
+      if (!Array.isArray(data) || data.length === 0) {
+        throw new Error(`empty verses: ${file}`);
+      }
+      const normalized = data
+        .map((item) => {
+          const reference = item.reference || item["出处"] || "";
+          const text = item.text || item["内容"] || "";
+          return {
+            reference: String(reference).trim(),
+            text: String(text).trim()
+          };
+        })
+        .filter((item) => item.reference && item.text);
+
+      if (normalized.length === 0) {
+        throw new Error(`invalid verse format: ${file}`);
+      }
+      return normalized;
+    }
+
+    async function loadAllVerses(groups) {
+      const all = [];
+      for (const group of groups) {
+        const items = await loadVersesFromFile(group.file);
+        all.push(...items);
+      }
+      if (all.length === 0) throw new Error("no verses loaded");
+      state.verses = all;
+    }
+
     function newQuestion() {
+      if (!state.verses.length) return;
       state.current = randomItem(state.verses);
       state.mode = Math.random() < 0.5 ? "reference" : "prefix";
       state.prefixText = "";
@@ -179,15 +243,22 @@
 
     async function init() {
       try {
-        const res = await fetch("./verses.json");
-        if (!res.ok) throw new Error("load fail");
-        state.verses = await res.json();
-        if (!Array.isArray(state.verses) || state.verses.length === 0) {
-          throw new Error("empty data");
+        // 优先扫描 verses/ 下的所有 json 文件；失败时回退到 groups.json
+        try {
+          state.groups = await scanVerseGroupFiles();
+        } catch {
+          const groupRes = await fetch("./groups.json");
+          if (!groupRes.ok) throw new Error("groups load fail");
+          state.groups = await groupRes.json();
         }
+
+        if (!Array.isArray(state.groups) || state.groups.length === 0) {
+          throw new Error("empty groups");
+        }
+        await loadAllVerses(state.groups);
         newQuestion();
       } catch (e) {
-        els.hint.textContent = "加载失败。请在当前目录启动本地服务后访问页面。示例：python3 -m http.server 8000";
+        els.hint.textContent = "加载失败。请确认 verses/ 下有 json 文件，或提供 groups.json，并在当前目录启动本地服务访问页面。";
         console.error(e);
       }
     }
