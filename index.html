@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>简易经文默写</title>
+  <title>经文默写</title>
   <style>
     body {
       margin: 0;
@@ -32,16 +32,45 @@
       background: #fafafa;
       line-height: 1.6;
     }
-    textarea {
-      width: 100%;
-      min-height: 130px;
-      border: 1px solid #d1d5db;
-      border-radius: 8px;
-      padding: 10px;
-      font-size: 15px;
-      line-height: 1.6;
-      resize: vertical;
-      box-sizing: border-box;
+    .ref-line {
+      text-align: center;
+      font-weight: 700;
+      margin: 2px 0;
+    }
+    .verse-line {
+      margin: 8px 0;
+      white-space: pre-wrap;
+      word-break: break-word;
+      min-height: 56px;
+    }
+    .verse-line.fill-mode {
+      border-bottom: 2px solid #9ca3af;
+      padding-bottom: 12px;
+      line-height: 1.8;
+      outline: none;
+      cursor: text;
+      position: relative;
+    }
+    .verse-line.fill-mode:focus {
+      border-bottom-color: #2563eb;
+    }
+    .verse-line.fill-mode::before {
+      content: attr(data-placeholder);
+      color: #9ca3af;
+      opacity: 0.6;
+      pointer-events: none;
+      position: absolute;
+      left: 0;
+      top: 6px;
+      right: 0;
+      white-space: pre-wrap;
+      z-index: 0;
+    }
+    .verse-line.fill-mode.has-input::before {
+      opacity: 0.35;
+    }
+    .verse-line.fill-mode:focus::before {
+      opacity: 0.45;
     }
     .row {
       display: flex;
@@ -80,22 +109,27 @@
 </head>
 <body>
   <div class="wrap">
-    <h1>简易经文默写</h1>
-    <div id="hint" class="hint">加载中...</div>
-    <textarea id="answer" placeholder="在这里补全经文"></textarea>
+    <h1>经文默写</h1>
+    <div id="hint" class="hint">
+      <div id="topRef" class="ref-line">加载中...</div>
+      <div id="verseLine" class="verse-line"></div>
+      <div id="bottomRef" class="ref-line"></div>
+    </div>
     <div class="row">
       <button id="checkBtn" type="button">检查</button>
       <button id="showBtn" type="button" class="secondary">显示答案</button>
       <button id="nextBtn" type="button">下一题（随机）</button>
     </div>
     <div id="result"></div>
-    <div class="note">题型：随机显示经文出处，或经文开头几个字，要求你补全剩余内容。</div>
+    <div class="note">题型：随机提示题（显示内容）或默写题（显示横线）。</div>
   </div>
 
   <script>
     const els = {
       hint: document.getElementById("hint"),
-      answer: document.getElementById("answer"),
+      topRef: document.getElementById("topRef"),
+      verseLine: document.getElementById("verseLine"),
+      bottomRef: document.getElementById("bottomRef"),
       result: document.getElementById("result"),
       checkBtn: document.getElementById("checkBtn"),
       showBtn: document.getElementById("showBtn"),
@@ -106,8 +140,7 @@
       groups: [],
       verses: [],
       current: null,
-      mode: "reference", // "reference" | "prefix"
-      prefixText: ""
+      mode: "fill" // "fill" | "hint"
     };
 
     function normalize(text) {
@@ -184,47 +217,57 @@
       state.verses = all;
     }
 
+    function toBlankLine(text) {
+      return "_".repeat(Math.max(24, Math.min(120, text.length)));
+    }
+
+    function syncFillUnderline() {
+      const hasInput = normalize(els.verseLine.textContent).length > 0;
+      els.verseLine.classList.toggle("has-input", hasInput);
+    }
+
     function newQuestion() {
       if (!state.verses.length) return;
       state.current = randomItem(state.verses);
-      state.mode = Math.random() < 0.5 ? "reference" : "prefix";
-      state.prefixText = "";
+      state.mode = Math.random() < 0.5 ? "hint" : "fill";
 
       const verse = state.current;
-      const fullText = verse.text.trim();
-      const prefixLen = Math.max(6, Math.min(14, Math.floor(fullText.length * 0.2)));
-
-      if (state.mode === "reference") {
-        els.hint.textContent = `经文出处：${verse.reference}（请默写完整经文）`;
+      els.topRef.textContent = verse.reference;
+      els.bottomRef.textContent = verse.reference;
+      if (state.mode === "hint") {
+        els.verseLine.classList.remove("fill-mode");
+        els.verseLine.classList.remove("has-input");
+        els.verseLine.removeAttribute("contenteditable");
+        els.verseLine.removeAttribute("data-placeholder");
+        els.verseLine.textContent = verse.text;
       } else {
-        state.prefixText = fullText.slice(0, prefixLen);
-        els.hint.textContent = `经文开头：${state.prefixText}...（请补全后面的内容）`;
+        els.verseLine.classList.add("fill-mode");
+        els.verseLine.classList.remove("has-input");
+        els.verseLine.setAttribute("contenteditable", "true");
+        els.verseLine.setAttribute("data-placeholder", toBlankLine(verse.text));
+        els.verseLine.textContent = "";
       }
-
-      els.answer.value = "";
       els.result.textContent = "";
       els.result.className = "";
-      els.answer.focus();
+      if (state.mode === "fill") els.verseLine.focus();
     }
 
     function isCorrect() {
       const verse = state.current;
-      const user = normalize(els.answer.value);
+      const user = normalize(els.verseLine.textContent);
       const full = normalize(verse.text);
 
       if (!user) return false;
-
-      if (state.mode === "reference") {
-        return user === full;
-      }
-
-      const remain = normalize(verse.text.slice(state.prefixText.length));
-      // 前缀模式：输入剩余内容，或输入整节经文，都算正确
-      return user === remain || user === full;
+      return user === full;
     }
 
     function checkAnswer() {
       if (!state.current) return;
+      if (state.mode === "hint") {
+        els.result.textContent = "当前是提示题，直接看经文即可，点“下一题（随机）”进入默写题。";
+        els.result.className = "";
+        return;
+      }
       if (isCorrect()) {
         els.result.textContent = "正确！";
         els.result.className = "ok";
@@ -237,6 +280,13 @@
     function showAnswer() {
       const verse = state.current;
       if (!verse) return;
+      els.topRef.textContent = verse.reference;
+      els.verseLine.classList.remove("fill-mode");
+      els.verseLine.classList.remove("has-input");
+      els.verseLine.removeAttribute("contenteditable");
+      els.verseLine.removeAttribute("data-placeholder");
+      els.verseLine.textContent = verse.text;
+      els.bottomRef.textContent = verse.reference;
       els.result.className = "";
       els.result.textContent = `答案：${verse.reference} - ${verse.text}`;
     }
@@ -258,7 +308,9 @@
         await loadAllVerses(state.groups);
         newQuestion();
       } catch (e) {
-        els.hint.textContent = "加载失败。请确认 verses/ 下有 json 文件，或提供 groups.json，并在当前目录启动本地服务访问页面。";
+        els.topRef.textContent = "加载失败";
+        els.verseLine.textContent = "请确认 verses/ 下有 json 文件，或提供 groups.json，并在当前目录启动本地服务访问页面。";
+        els.bottomRef.textContent = "";
         console.error(e);
       }
     }
@@ -266,11 +318,12 @@
     els.checkBtn.addEventListener("click", checkAnswer);
     els.showBtn.addEventListener("click", showAnswer);
     els.nextBtn.addEventListener("click", newQuestion);
-    els.answer.addEventListener("keydown", (e) => {
+    els.verseLine.addEventListener("keydown", (e) => {
       if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
         checkAnswer();
       }
     });
+    els.verseLine.addEventListener("input", syncFillUnderline);
 
     init();
   </script>
