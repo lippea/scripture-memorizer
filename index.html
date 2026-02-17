@@ -41,6 +41,9 @@
     .ref-line.ref-fill {
       position: relative;
       min-height: 24px;
+      padding-top: 2px;
+      padding-bottom: 14px;
+      line-height: 1.5;
       white-space: pre-wrap;
       word-break: break-word;
       outline: none;
@@ -53,8 +56,9 @@
       pointer-events: none;
       position: absolute;
       left: 0;
-      top: 0;
+      top: 8px;
       right: 0;
+      line-height: 1.8;
       white-space: pre-wrap;
     }
     .ref-line.ref-fill.has-input::before {
@@ -127,9 +131,6 @@
     .char-missing {
       color: #b91c1c;
       font-weight: 600;
-      text-decoration: underline;
-      text-decoration-thickness: 1.5px;
-      text-underline-offset: 2px;
     }
     .row {
       display: flex;
@@ -138,16 +139,21 @@
       flex-wrap: wrap;
     }
     button {
-      border: 0;
+      border: 1px solid #d1d5db;
       border-radius: 8px;
       padding: 9px 13px;
       cursor: pointer;
-      font-weight: 600;
       background: #2563eb;
-      color: #fff;
+      border-color: #2563eb;
+      color: #ffffff;
     }
     button.secondary {
-      background: #6b7280;
+      border-color: #2563eb;
+      color: #ffffff;
+      background: #2563eb;
+    }
+    button:hover {
+      background: #1d4ed8;
     }
     #result {
       margin-top: 12px;
@@ -178,7 +184,7 @@
     </div>
     <div class="row">
       <button id="checkBtn" type="button">检查</button>
-      <button id="nextBtn" type="button">下一题（随机）</button>
+      <button id="nextBtn" type="button">下一题</button>
     </div>
     <div id="result"></div>
     <div class="note">题型：随机只显示章节，或只显示经文前几个字（该模式需默写章节+经文）。</div>
@@ -328,6 +334,23 @@
     function syncFillUnderline() {
       const hasInput = normalize(els.verseLine.textContent).length > 0;
       els.verseLine.classList.toggle("has-input", hasInput);
+      updateCheckButtonState();
+    }
+
+    function hasAnyUserInput() {
+      if (!state.current) return false;
+      if (state.mode === "reference") {
+        return normalize(els.verseLine.textContent).length > 0;
+      }
+      const refInput = normalize(els.topRef.textContent).length > 0;
+      const verseInput = normalize(els.verseLine.textContent).length > 0;
+      return refInput || verseInput;
+    }
+
+    function updateCheckButtonState() {
+      els.checkBtn.disabled = false;
+      els.checkBtn.style.opacity = "1";
+      els.checkBtn.style.cursor = "pointer";
     }
 
     function enableReferenceFillMode(referenceText) {
@@ -362,6 +385,7 @@
       els.topRef.classList.toggle("has-input", hasInput);
       els.bottomRef.classList.toggle("has-input", hasInput);
       els.bottomRef.textContent = text;
+      updateCheckButtonState();
     }
 
     function escapeHtml(text) {
@@ -516,10 +540,6 @@
     function applyInlineDiffColoring() {
       if (!state.current) return;
       const rawUser = els.verseLine.textContent || "";
-      if (!rawUser) {
-        els.verseLine.innerHTML = "";
-        return;
-      }
       const caretOffset = getCaretOffsetWithin(els.verseLine);
       const expectedRaw = bestExpectedForUser(rawUser, getExpectedCandidates());
       els.verseLine.innerHTML = renderComparedInput(rawUser, expectedRaw);
@@ -577,6 +597,7 @@
       syncFillLayoutHeight();
       els.result.textContent = "";
       els.result.className = "";
+      updateCheckButtonState();
       if (state.mode === "prefix") {
         els.topRef.focus();
       } else {
