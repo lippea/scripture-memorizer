@@ -404,13 +404,28 @@
       return a.toLowerCase() === b.toLowerCase();
     }
 
+    function isIgnoredPunctuation(ch) {
+      if (!ch) return false;
+      if (/\s/.test(ch)) return false;
+      return !/[a-z0-9\u4e00-\u9fa5]/i.test(ch);
+    }
+
+    function toComparableChars(text) {
+      return String(text || "")
+        .replace(/\r/g, "")
+        .split("")
+        .filter((ch) => !isIgnoredPunctuation(ch));
+    }
+
     function scoreAgainstExpected(user, expected) {
-      const maxLen = Math.max(user.length, expected.length);
+      const userChars = toComparableChars(user);
+      const expectedChars = toComparableChars(expected);
+      const maxLen = Math.max(userChars.length, expectedChars.length);
       if (maxLen === 0) return -1;
       let matches = 0;
       for (let i = 0; i < maxLen; i += 1) {
-        const u = user[i] || "";
-        const e = expected[i] || "";
+        const u = userChars[i] || "";
+        const e = expectedChars[i] || "";
         if (charsEqual(u, e)) matches += 1;
       }
       return matches / maxLen;
@@ -429,14 +444,26 @@
       return best;
     }
 
+    function stripLeadingPromptText(userText, promptText) {
+      const user = String(userText || "");
+      const prompt = String(promptText || "");
+      if (!prompt) return user;
+      if (user.startsWith(prompt)) return user.slice(prompt.length);
+      return user;
+    }
+
     function renderComparedInput(user, expected) {
-      const m = user.length;
-      const n = expected.length;
+      const rawUser = String(user || "").replace(/\r/g, "");
+      const rawExpected = String(expected || "").replace(/\r/g, "");
+      const userChars = rawUser.split("").filter((ch) => !isIgnoredPunctuation(ch));
+      const expectedChars = rawExpected.split("").filter((ch) => !isIgnoredPunctuation(ch));
+      const m = userChars.length;
+      const n = expectedChars.length;
       const dp = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
 
       for (let i = m - 1; i >= 0; i -= 1) {
         for (let j = n - 1; j >= 0; j -= 1) {
-          if (charsEqual(user[i], expected[j])) {
+          if (charsEqual(userChars[i], expectedChars[j])) {
             dp[i][j] = dp[i + 1][j + 1] + 1;
           } else {
             dp[i][j] = Math.max(dp[i + 1][j], dp[i][j + 1]);
@@ -446,34 +473,73 @@
 
       function renderChar(ch, cls) {
         if (ch === "\n") return "<br>";
+        if (cls === "char-neutral") return escapeHtml(ch);
         return `<span class="${cls}">${escapeHtml(ch)}</span>`;
       }
 
-      let html = "";
+      const ops = [];
       let i = 0;
       let j = 0;
 
       while (i < m && j < n) {
-        if (charsEqual(user[i], expected[j])) {
-          html += renderChar(user[i], "char-ok");
+        if (charsEqual(userChars[i], expectedChars[j])) {
+          ops.push({ type: "ok", userChar: userChars[i], expectedChar: expectedChars[j] });
           i += 1;
           j += 1;
         } else if (dp[i + 1][j] >= dp[i][j + 1]) {
-          html += renderChar(user[i], "char-extra");
+          ops.push({ type: "extra", userChar: userChars[i] });
           i += 1;
         } else {
-          html += renderChar(expected[j], "char-missing");
+          ops.push({ type: "missing", expectedChar: expectedChars[j] });
           j += 1;
         }
       }
 
       while (i < m) {
-        html += renderChar(user[i], "char-extra");
+        ops.push({ type: "extra", userChar: userChars[i] });
         i += 1;
       }
       while (j < n) {
-        html += renderChar(expected[j], "char-missing");
+        ops.push({ type: "missing", expectedChar: expectedChars[j] });
         j += 1;
+      }
+
+      let html = "";
+      let opIndex = 0;
+      for (const expectedChar of rawExpected.split("")) {
+        if (isIgnoredPunctuation(expectedChar)) {
+          html += renderChar(expectedChar, "char-neutral");
+          continue;
+        }
+
+        while (opIndex < ops.length && ops[opIndex].type === "extra") {
+          html += renderChar(ops[opIndex].userChar, "char-extra");
+          opIndex += 1;
+        }
+
+        const op = ops[opIndex];
+        if (!op) {
+          html += renderChar(expectedChar, "char-missing");
+          continue;
+        }
+
+        if (op.type === "ok") {
+          html += renderChar(op.userChar, "char-ok");
+          opIndex += 1;
+        } else if (op.type === "missing") {
+          html += renderChar(op.expectedChar, "char-missing");
+          opIndex += 1;
+        } else {
+          html += renderChar(expectedChar, "char-missing");
+        }
+      }
+
+      while (opIndex < ops.length) {
+        const op = ops[opIndex];
+        if (op.type === "extra") {
+          html += renderChar(op.userChar, "char-extra");
+        }
+        opIndex += 1;
       }
 
       return html;
@@ -482,10 +548,7 @@
     function getExpectedCandidates() {
       if (!state.current) return [""];
       if (state.mode === "reference") return [state.current.text];
-      return [
-        state.current.text.slice(state.prefixText.length),
-        state.current.text
-      ];
+      return [state.current.text.slice(state.prefixText.length)];
     }
 
     function getCaretOffsetWithin(element) {
@@ -539,7 +602,10 @@
 
     function applyInlineDiffColoring() {
       if (!state.current) return;
-      const rawUser = els.verseLine.textContent || "";
+      const rawUserInput = els.verseLine.textContent || "";
+      const rawUser = state.mode === "prefix"
+        ? stripLeadingPromptText(rawUserInput, state.prefixText)
+        : rawUserInput;
       const caretOffset = getCaretOffsetWithin(els.verseLine);
       const expectedRaw = bestExpectedForUser(rawUser, getExpectedCandidates());
       els.verseLine.innerHTML = renderComparedInput(rawUser, expectedRaw);
@@ -607,7 +673,11 @@
 
     function isCorrect(inputText) {
       const verse = state.current;
-      const user = normalize(inputText ?? els.verseLine.textContent);
+      const rawInput = inputText ?? els.verseLine.textContent;
+      const cleanedInput = state.mode === "prefix"
+        ? stripLeadingPromptText(rawInput, state.prefixText)
+        : rawInput;
+      const user = normalize(cleanedInput);
       const full = normalize(verse.text);
 
       if (!user) return false;
