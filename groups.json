@@ -1,0 +1,5 @@
+[
+  { "name": "主祷文", "file": "verses/主祷文.json" },
+  { "name": "初信造就", "file": "verses/初信造就.json" },
+  { "name": "每周背诵经文", "file": "verses/每周背诵经文.json" }
+]
