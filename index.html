@@ -112,15 +112,8 @@
     .verse-line.fill-mode:focus::before {
       opacity: 0.45;
     }
-    .verse-line.checked {
-      cursor: text;
-    }
     .char-ok {
       color: #047857;
-      font-weight: 600;
-    }
-    .char-bad {
-      color: #b91c1c;
       font-weight: 600;
     }
     .char-extra {
@@ -131,16 +124,6 @@
     .char-missing {
       color: #b91c1c;
       font-weight: 600;
-    }
-    #result {
-      margin-top: 12px;
-      font-weight: 700;
-    }
-    .ok {
-      color: #047857;
-    }
-    .bad {
-      color: #b91c1c;
     }
     .note {
       margin-top: 10px;
@@ -159,23 +142,19 @@
       </div>
       <div id="bottomRef" class="ref-line"></div>
     </div>
-    <div id="result"></div>
     <div class="note">题型：随机只显示章节，或只显示经文前几个字（该模式需默写章节+经文）。</div>
     <div class="note">操作：回车一次检查，检查后再次回车进入下一题。</div>
   </div>
 
   <script>
     const els = {
-      hint: document.getElementById("hint"),
       topRef: document.getElementById("topRef"),
       prefixLead: document.getElementById("prefixLead"),
       verseLine: document.getElementById("verseLine"),
-      bottomRef: document.getElementById("bottomRef"),
-      result: document.getElementById("result")
+      bottomRef: document.getElementById("bottomRef")
     };
 
     const state = {
-      groups: [],
       verses: [],
       current: null,
       mode: "reference", // "reference" | "prefix"
@@ -195,15 +174,7 @@
       return list[Math.floor(Math.random() * list.length)];
     }
 
-    function toGroupName(fileName) {
-      return fileName
-        .replace(/\.json$/i, "")
-        .replace(/^verses[-_]?/i, "")
-        .replace(/[-_]+/g, " ")
-        .trim() || "未命名分组";
-    }
-
-    async function scanVerseGroupFiles() {
+    async function scanVerseFiles() {
       const res = await fetch("./verses/");
       if (!res.ok) throw new Error("scan folder fail");
       const html = await res.text();
@@ -217,10 +188,7 @@
 
       if (!files.length) throw new Error("no json file in verses folder");
 
-      return files.map((file) => ({
-        name: toGroupName(file),
-        file: `verses/${file}`
-      }));
+      return files.map((file) => `verses/${file}`);
     }
 
     async function loadVersesFromFile(file) {
@@ -247,10 +215,10 @@
       return normalized;
     }
 
-    async function loadAllVerses(groups) {
+    async function loadAllVerses(files) {
       const all = [];
-      for (const group of groups) {
-        const items = await loadVersesFromFile(group.file);
+      for (const file of files) {
+        const items = await loadVersesFromFile(file);
         all.push(...items);
       }
       if (all.length === 0) throw new Error("no verses loaded");
@@ -592,7 +560,6 @@
       const prefixLen = Math.max(4, Math.min(12, Math.floor(fullText.length * 0.18)));
 
       els.verseLine.classList.add("fill-mode");
-      els.verseLine.removeAttribute("contenteditable");
       els.verseLine.setAttribute("contenteditable", "true");
 
       if (state.mode === "reference") {
@@ -618,8 +585,6 @@
         syncReferenceMirror();
       }
       syncFillLayoutHeight();
-      els.result.textContent = "";
-      els.result.className = "";
       state.checked = false;
       if (state.mode === "prefix") {
         els.topRef.focus();
@@ -628,30 +593,10 @@
       }
     }
 
-    function isCorrect(inputText) {
-      const verse = state.current;
-      const rawInput = inputText ?? els.verseLine.textContent;
-      const cleanedInput = state.mode === "prefix"
-        ? stripLeadingPromptText(rawInput, state.prefixText)
-        : rawInput;
-      const user = normalize(cleanedInput);
-      const full = normalize(verse.text);
-
-      if (!user) return false;
-      if (state.mode === "reference") return user === full;
-      const refUser = normalize(els.topRef.textContent);
-      const refExpected = normalize(verse.reference);
-      if (refUser !== refExpected) return false;
-      const remain = normalize(verse.text.slice(state.prefixText.length));
-      return user === full || user === remain;
-    }
-
     function checkAnswer() {
       if (!state.current) return;
       applyInlineDiffColoring();
       applyReferenceDiffColoring();
-      els.result.textContent = "";
-      els.result.className = "";
       state.checked = true;
     }
 
@@ -667,19 +612,25 @@
 
     async function init() {
       try {
-        // 优先扫描 verses/ 下的所有 json 文件；失败时回退到 groups.json
+        let verseFiles = [];
+        // 优先扫描 verses/ 下的所有 json 文件；失败时回退到 groups.json 里的 file 字段
         try {
-          state.groups = await scanVerseGroupFiles();
+          verseFiles = await scanVerseFiles();
         } catch {
           const groupRes = await fetch("./groups.json");
           if (!groupRes.ok) throw new Error("groups load fail");
-          state.groups = await groupRes.json();
+          const groups = await groupRes.json();
+          verseFiles = Array.isArray(groups)
+            ? groups
+              .map((group) => String(group?.file || "").trim())
+              .filter(Boolean)
+            : [];
         }
 
-        if (!Array.isArray(state.groups) || state.groups.length === 0) {
-          throw new Error("empty groups");
+        if (!Array.isArray(verseFiles) || verseFiles.length === 0) {
+          throw new Error("empty verse files");
         }
-        await loadAllVerses(state.groups);
+        await loadAllVerses(verseFiles);
         newQuestion();
       } catch (e) {
         els.topRef.textContent = "加载失败";
