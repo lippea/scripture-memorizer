@@ -132,29 +132,6 @@
       color: #b91c1c;
       font-weight: 600;
     }
-    .row {
-      display: flex;
-      gap: 10px;
-      margin-top: 12px;
-      flex-wrap: wrap;
-    }
-    button {
-      border: 1px solid #d1d5db;
-      border-radius: 8px;
-      padding: 9px 13px;
-      cursor: pointer;
-      background: #2563eb;
-      border-color: #2563eb;
-      color: #ffffff;
-    }
-    button.secondary {
-      border-color: #2563eb;
-      color: #ffffff;
-      background: #2563eb;
-    }
-    button:hover {
-      background: #1d4ed8;
-    }
     #result {
       margin-top: 12px;
       font-weight: 700;
@@ -182,12 +159,9 @@
       </div>
       <div id="bottomRef" class="ref-line"></div>
     </div>
-    <div class="row">
-      <button id="checkBtn" type="button">检查</button>
-      <button id="nextBtn" type="button">下一题</button>
-    </div>
     <div id="result"></div>
     <div class="note">题型：随机只显示章节，或只显示经文前几个字（该模式需默写章节+经文）。</div>
+    <div class="note">操作：回车一次检查，检查后再次回车进入下一题。</div>
   </div>
 
   <script>
@@ -197,9 +171,7 @@
       prefixLead: document.getElementById("prefixLead"),
       verseLine: document.getElementById("verseLine"),
       bottomRef: document.getElementById("bottomRef"),
-      result: document.getElementById("result"),
-      checkBtn: document.getElementById("checkBtn"),
-      nextBtn: document.getElementById("nextBtn")
+      result: document.getElementById("result")
     };
 
     const state = {
@@ -207,7 +179,8 @@
       verses: [],
       current: null,
       mode: "reference", // "reference" | "prefix"
-      prefixText: ""
+      prefixText: "",
+      checked: false
     };
 
     function normalize(text) {
@@ -334,23 +307,7 @@
     function syncFillUnderline() {
       const hasInput = normalize(els.verseLine.textContent).length > 0;
       els.verseLine.classList.toggle("has-input", hasInput);
-      updateCheckButtonState();
-    }
-
-    function hasAnyUserInput() {
-      if (!state.current) return false;
-      if (state.mode === "reference") {
-        return normalize(els.verseLine.textContent).length > 0;
-      }
-      const refInput = normalize(els.topRef.textContent).length > 0;
-      const verseInput = normalize(els.verseLine.textContent).length > 0;
-      return refInput || verseInput;
-    }
-
-    function updateCheckButtonState() {
-      els.checkBtn.disabled = false;
-      els.checkBtn.style.opacity = "1";
-      els.checkBtn.style.cursor = "pointer";
+      state.checked = false;
     }
 
     function enableReferenceFillMode(referenceText) {
@@ -385,7 +342,7 @@
       els.topRef.classList.toggle("has-input", hasInput);
       els.bottomRef.classList.toggle("has-input", hasInput);
       els.bottomRef.textContent = text;
-      updateCheckButtonState();
+      state.checked = false;
     }
 
     function escapeHtml(text) {
@@ -663,7 +620,7 @@
       syncFillLayoutHeight();
       els.result.textContent = "";
       els.result.className = "";
-      updateCheckButtonState();
+      state.checked = false;
       if (state.mode === "prefix") {
         els.topRef.focus();
       } else {
@@ -695,6 +652,17 @@
       applyReferenceDiffColoring();
       els.result.textContent = "";
       els.result.className = "";
+      state.checked = true;
+    }
+
+    function onEnterPressed(e) {
+      if (e.key !== "Enter") return;
+      e.preventDefault();
+      if (state.checked) {
+        newQuestion();
+      } else {
+        checkAnswer();
+      }
     }
 
     async function init() {
@@ -723,21 +691,9 @@
       }
     }
 
-    els.checkBtn.addEventListener("click", checkAnswer);
-    els.nextBtn.addEventListener("click", newQuestion);
     els.topRef.addEventListener("input", syncReferenceMirror);
-    els.topRef.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        checkAnswer();
-      }
-    });
-    els.verseLine.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        checkAnswer();
-      }
-    });
+    els.topRef.addEventListener("keydown", onEnterPressed);
+    els.verseLine.addEventListener("keydown", onEnterPressed);
     els.verseLine.addEventListener("input", syncFillUnderline);
     window.addEventListener("resize", syncFillLayoutHeight);
 
