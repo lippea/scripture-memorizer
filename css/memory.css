@@ -1,0 +1,137 @@
+/* Memory mode specific styles */
+.wrap {
+  max-width: 760px;
+  margin: 0 auto;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 18px;
+  margin-top: 24px;
+}
+
+.wrap h1 {
+  margin: 0 0 12px;
+  font-size: 22px;
+}
+
+.hint {
+  margin: 10px 0 14px;
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fafafa;
+  line-height: 1.6;
+}
+
+.ref-line {
+  text-align: left;
+  font-weight: 700;
+  margin: 2px 0;
+  color: #111827;
+}
+
+.ref-line.ref-fill {
+  position: relative;
+  min-height: 24px;
+  padding-top: 2px;
+  padding-bottom: 14px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  outline: none;
+  cursor: text;
+}
+
+.ref-line.ref-fill::before {
+  content: attr(data-placeholder);
+  color: #9ca3af;
+  opacity: 0.6;
+  pointer-events: none;
+  position: absolute;
+  left: 0;
+  top: 8px;
+  right: 0;
+  line-height: 1.8;
+  white-space: pre-wrap;
+}
+
+.ref-line.ref-fill.has-input::before {
+  opacity: 0.3;
+}
+
+.verse-compose {
+  margin: 8px 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0;
+}
+
+.prefix-lead {
+  margin: 0;
+  padding-right: 1px;
+  color: #111827;
+  line-height: 1.8;
+  white-space: pre;
+  word-break: keep-all;
+  flex: 0 0 auto;
+}
+
+.verse-line {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  min-height: 56px;
+  flex: 1 1 220px;
+}
+
+.verse-line.fill-mode {
+  padding-bottom: 12px;
+  line-height: 1.8;
+  outline: none;
+  cursor: text;
+  position: relative;
+}
+
+.verse-line.fill-mode::before {
+  content: attr(data-placeholder);
+  color: #9ca3af;
+  opacity: 0.6;
+  pointer-events: none;
+  position: absolute;
+  left: 0;
+  top: 6px;
+  right: 0;
+  white-space: pre-wrap;
+  z-index: 0;
+}
+
+.verse-line.fill-mode.has-input::before {
+  opacity: 0.35;
+}
+
+.verse-line.fill-mode:focus::before {
+  opacity: 0.45;
+}
+
+.char-ok {
+  color: #047857;
+  font-weight: 600;
+}
+
+.char-extra {
+  color: #b91c1c;
+  text-decoration: line-through;
+  text-decoration-thickness: 1.5px;
+}
+
+.char-missing {
+  color: #b91c1c;
+  font-weight: 600;
+}
+
+.note {
+  margin-top: 10px;
+  color: #6b7280;
+  font-size: 13px;
+}

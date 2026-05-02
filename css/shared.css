@@ -1,0 +1,100 @@
+/* Shared styles across all pages */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: #f7f7f8;
+  color: #1f2937;
+  line-height: 1.6;
+}
+
+.header {
+  background: #fff;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  margin: 12px 8px;
+}
+
+.nav-link {
+  color: #6b7280;
+  text-decoration: none;
+  font-size: 14px;
+  padding: 6px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: #fafafa;
+  margin: 12px 8px;
+}
+
+.nav-link:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.hamburger {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 6px;
+  color: #6b7280;
+}
+
+.main {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+/* Verse card styles */
+.verse-card {
+  padding: 16px;
+  border-bottom: 1px solid #f3f4f6;
+  transition: background 0.2s;
+}
+
+.verse-card:last-child {
+  border-bottom: none;
+}
+
+.verse-card:hover {
+  background: #fafafa;
+}
+
+.verse-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.verse-checkbox {
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.verse-reference {
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.verse-text {
+  color: #374151;
+  line-height: 1.7;
+}
