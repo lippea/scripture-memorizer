@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>查看经文 - Scripture Memorizer</title>
+  <title>查看经文</title>
   <style>
     body {
       margin: 0;
@@ -59,20 +59,17 @@
     .main {
       max-width: 760px;
       margin: 0 auto;
-      padding: 16px;
+      padding-top: 8px;
     }
-
 
     .view-container {
       background: #fff;
       border: 1px solid #e5e7eb;
-      border-radius: 8px;
       overflow: hidden;
     }
 
     .view-content {
       display: none;
-      padding: 16px;
     }
 
     .view-content.active {
@@ -80,12 +77,10 @@
     }
 
     .verse-card {
-      padding: 16px;
       border-bottom: 1px solid #f3f4f6;
       transition: background 0.2s;
-      display: flex;
       align-items: flex-start;
-      gap: 12px;
+      padding: 8px;
     }
 
     .verse-card:last-child {
@@ -97,8 +92,7 @@
     }
 
     .verse-checkbox {
-      margin-top: 2px;
-      flex-shrink: 0;
+      margin: 4px 4px 0 0;
     }
 
     .verse-content {
@@ -157,62 +151,6 @@
       text-align: center;
       padding: 32px;
       color: #dc2626;
-    }
-
-
-    /* Mobile optimizations */
-    @media (max-width: 767px) {
-      .header {
-        padding: 10px 12px;
-      }
-
-      .header h1 {
-        font-size: 16px;
-      }
-
-      .main {
-        padding: 12px;
-      }
-
-      .tabs {
-        margin-bottom: 12px;
-      }
-
-      .tab {
-        padding: 10px 12px;
-        font-size: 13px;
-      }
-
-      .view-content {
-        padding: 12px;
-      }
-
-      .verse-card {
-        padding: 12px;
-      }
-
-      .verse-reference {
-        font-size: 13px;
-      }
-
-      .verse-text {
-        font-size: 14px;
-      }
-    }
-
-    /* Tablet and desktop */
-    @media (min-width: 768px) {
-      .main {
-        padding: 24px;
-      }
-
-      .view-content {
-        padding: 20px;
-      }
-
-      .verse-card {
-        padding: 20px;
-      }
     }
 
     .empty-state {
@@ -385,9 +323,10 @@
 <body>
   <header class="header">
     <div style="display: flex; align-items: center; gap: 12px;">
-      <button class="hamburger" id="hamburger">☰</button>
+      
       <h1>查看经文</h1>
     </div>
+    <button class="hamburger" id="hamburger">☰</button>
     <a href="index.html" class="nav-link">📝 默写练习</a>
   </header>
 
@@ -705,13 +644,13 @@
       const html = state.filteredVerses
         .map(verse => `
           <div class="verse-card">
-            <input type="checkbox" class="verse-checkbox" 
+              <div class="verse-reference">
+                <input type="checkbox" class="verse-checkbox" 
                    data-reference="${verse.reference}" 
                    ${state.selectedVerses.has(verse.reference) ? 'checked' : ''}>
-            <div class="verse-content">
-              <div class="verse-reference">${verse.reference}</div>
+                ${verse.reference}
+              </div>
               <div class="verse-text">${verse.text}</div>
-            </div>
           </div>
         `)
         .join('');
@@ -746,13 +685,12 @@
               <div class="group-verses">
                 ${groupVerses.map(verse => `
                   <div class="verse-card">
-                    <input type="checkbox" class="verse-checkbox" 
-                           data-reference="${verse.reference}" 
-                           ${state.selectedVerses.has(verse.reference) ? 'checked' : ''}>
-                    <div class="verse-content">
-                      <div class="verse-reference">${verse.reference}</div>
-                      <div class="verse-text">${verse.text}</div>
-                    </div>
+                    <div class="verse-reference">
+                      <input type="checkbox" class="verse-checkbox" 
+                          data-reference="${verse.reference}" 
+                          ${state.selectedVerses.has(verse.reference) ? 'checked' : ''}>
+                      ${verse.reference}</div>
+                    <div class="verse-text">${verse.text}</div>
                   </div>
                 `).join('')}
               </div>
@@ -817,13 +755,12 @@
               <div class="book-header">${bookName} (${verses.length})</div>
               ${sortedVerses.map(verse => `
                 <div class="verse-card">
-                  <input type="checkbox" class="verse-checkbox" 
-                         data-reference="${verse.reference}" 
-                         ${state.selectedVerses.has(verse.reference) ? 'checked' : ''}>
-                  <div class="verse-content">
-                    <div class="verse-reference">${verse.reference}</div>
-                    <div class="verse-text">${verse.text}</div>
-                  </div>
+                  <div class="verse-reference">
+                    <input type="checkbox" class="verse-checkbox" 
+                        data-reference="${verse.reference}" 
+                        ${state.selectedVerses.has(verse.reference) ? 'checked' : ''}>
+                    ${verse.reference}</div>
+                  <div class="verse-text">${verse.text}</div>
                 </div>
               `).join('')}
             </div>
