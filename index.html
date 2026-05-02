@@ -635,15 +635,22 @@
         }
         await loadAllVerses(verseFiles);
         
-        // Filter verses based on selection from view.html
+        // Filter verses based on selection from view.html.
+        // If no scriptures are selected, fall back to all verses.
         const savedSelected = localStorage.getItem('selectedVerses');
         if (savedSelected) {
-          const selectedRefs = new Set(JSON.parse(savedSelected));
-          state.verses = state.verses.filter(verse => selectedRefs.has(verse.reference));
+          try {
+            const selectedRefs = new Set(JSON.parse(savedSelected));
+            if (selectedRefs.size > 0) {
+              state.verses = state.verses.filter(verse => selectedRefs.has(verse.reference));
+            }
+          } catch (err) {
+            console.warn('Invalid selectedVerses data, using all verses.', err);
+          }
         }
         
         if (state.verses.length === 0) {
-          throw new Error("没有选择经文进行默写。请在查看页面选择要默写的经文。");
+          throw new Error("没有可用的经文进行默写。请检查 verses/ 目录或 groups.json 文件。");
         }
         
         newQuestion();
