@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>查看经文 - Scripture Memorizer</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f7f7f8;
+      color: #1f2937;
+      line-height: 1.6;
+    }
+
+    .header {
+      background: #fff;
+      border-bottom: 1px solid #e5e7eb;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header h1 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .nav-link {
+      color: #6b7280;
+      text-decoration: none;
+      font-size: 14px;
+      padding: 6px 12px;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      background: #fafafa;
+    }
+
+    .nav-link:hover {
+      background: #f3f4f6;
+      color: #374151;
+    }
+
+    .hamburger {
+      background: none;
+      border: none;
+      font-size: 18px;
+      cursor: pointer;
+      padding: 6px;
+      color: #6b7280;
+    }
+
+    .search-btn {
+      background: none;
+      border: none;
+      font-size: 16px;
+      cursor: pointer;
+      padding: 6px;
+      color: #6b7280;
+    }
+
+    .main {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    .tabs {
+      display: flex;
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      overflow: hidden;
+    }
+
+    .tab {
+      flex: 1;
+      padding: 12px 16px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      color: #6b7280;
+      transition: all 0.2s;
+      border-right: 1px solid #e5e7eb;
+    }
+
+    .tab:last-child {
+      border-right: none;
+    }
+
+    .tab.active {
+      background: #f3f4f6;
+      color: #111827;
+      font-weight: 600;
+    }
+
+    .tab:hover:not(.active) {
+      background: #fafafa;
+      color: #374151;
+    }
+
+    .view-container {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .view-content {
+      display: none;
+      padding: 16px;
+    }
+
+    .view-content.active {
+      display: block;
+    }
+
+    .verse-card {
+      padding: 16px;
+      border-bottom: 1px solid #f3f4f6;
+      transition: background 0.2s;
+    }
+
+    .verse-card:last-child {
+      border-bottom: none;
+    }
+
+    .verse-card:hover {
+      background: #fafafa;
+    }
+
+    .verse-reference {
+      font-weight: 600;
+      color: #111827;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+
+    .verse-text {
+      color: #374151;
+      line-height: 1.7;
+    }
+
+    .group-section {
+      margin-bottom: 24px;
+    }
+
+    .group-header {
+      padding: 8px 16px;
+      background: #f9fafb;
+      border-bottom: 1px solid #f3f4f6;
+      font-weight: 600;
+      color: #111827;
+      font-size: 15px;
+    }
+
+    .group-verses {
+      display: block;
+    }
+
+    .book-section {
+      margin-bottom: 16px;
+    }
+
+    .book-header {
+      padding: 8px 16px;
+      background: #f9fafb;
+      border-bottom: 1px solid #f3f4f6;
+      font-weight: 600;
+      color: #111827;
+      font-size: 15px;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 32px;
+      color: #6b7280;
+    }
+
+    .error {
+      text-align: center;
+      padding: 32px;
+      color: #dc2626;
+    }
+
+    .search-container {
+      margin-bottom: 16px;
+      position: relative;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      font-size: 14px;
+      background: #fff;
+      box-sizing: border-box;
+    }
+
+    .search-input:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    /* Mobile optimizations */
+    @media (max-width: 767px) {
+      .header {
+        padding: 10px 12px;
+      }
+
+      .header h1 {
+        font-size: 16px;
+      }
+
+      .main {
+        padding: 12px;
+      }
+
+      .tabs {
+        margin-bottom: 12px;
+      }
+
+      .tab {
+        padding: 10px 12px;
+        font-size: 13px;
+      }
+
+      .view-content {
+        padding: 12px;
+      }
+
+      .verse-card {
+        padding: 12px;
+      }
+
+      .verse-reference {
+        font-size: 13px;
+      }
+
+      .verse-text {
+        font-size: 14px;
+      }
+    }
+
+    /* Tablet and desktop */
+    @media (min-width: 768px) {
+      .main {
+        padding: 24px;
+      }
+
+      .view-content {
+        padding: 20px;
+      }
+
+      .verse-card {
+        padding: 20px;
+      }
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 48px 16px;
+      color: #6b7280;
+    }
+
+    .empty-state-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <button class="hamburger" id="hamburger">☰</button>
+      <h1>查看经文</h1>
+    </div>
+    <a href="index.html" class="nav-link">📝 默写练习</a>
+  </header>
+
+  <main class="main">
+    <div class="search-container">
+      <input type="text" class="search-input" id="searchInput" placeholder="搜索经文或出处...">
+    </div>
+
+    <nav class="tabs">
+      <button class="tab active" data-view="all">全部经文</button>
+      <button class="tab" data-view="groups">分组查看</button>
+      <button class="tab" data-view="books">按书卷查看</button>
+    </nav>
+
+    <div class="view-container">
+      <div id="view-all" class="view-content active">
+        <div class="loading">加载中...</div>
+      </div>
+      
+      <div id="view-groups" class="view-content">
+        <div class="loading">加载中...</div>
+      </div>
+      
+      <div id="view-books" class="view-content">
+        <div class="loading">加载中...</div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // Chinese Bible book mapping for sorting
+    const BOOK_MAPPING = {
+      '创': { name: '创世记', order: 1, testament: 'old' },
+      '出': { name: '出埃及记', order: 2, testament: 'old' },
+      '利': { name: '利未记', order: 3, testament: 'old' },
+      '民': { name: '民数记', order: 4, testament: 'old' },
+      '申': { name: '申命记', order: 5, testament: 'old' },
+      '书': { name: '约书亚记', order: 6, testament: 'old' },
+      '士': { name: '士师记', order: 7, testament: 'old' },
+      '得': { name: '路得记', order: 8, testament: 'old' },
+      '撒上': { name: '撒母耳记上', order: 9, testament: 'old' },
+      '撒下': { name: '撒母耳记下', order: 10, testament: 'old' },
+      '王上': { name: '列王纪上', order: 11, testament: 'old' },
+      '王下': { name: '列王纪下', order: 12, testament: 'old' },
+      '代上': { name: '历代志上', order: 13, testament: 'old' },
+      '代下': { name: '历代志下', order: 14, testament: 'old' },
+      '拉': { name: '以斯拉记', order: 15, testament: 'old' },
+      '尼': { name: '尼希米记', order: 16, testament: 'old' },
+      '斯': { name: '以斯帖记', order: 17, testament: 'old' },
+      '伯': { name: '约伯记', order: 18, testament: 'old' },
+      '诗': { name: '诗篇', order: 19, testament: 'old' },
+      '箴': { name: '箴言', order: 20, testament: 'old' },
+      '传': { name: '传道书', order: 21, testament: 'old' },
+      '歌': { name: '雅歌', order: 22, testament: 'old' },
+      '赛': { name: '以赛亚书', order: 23, testament: 'old' },
+      '耶': { name: '耶利米书', order: 24, testament: 'old' },
+      '哀': { name: '耶利米哀歌', order: 25, testament: 'old' },
+      '结': { name: '以西结书', order: 26, testament: 'old' },
+      '但': { name: '但以理书', order: 27, testament: 'old' },
+      '何': { name: '何西阿书', order: 28, testament: 'old' },
+      '珥': { name: '约珥书', order: 29, testament: 'old' },
+      '摩': { name: '阿摩司书', order: 30, testament: 'old' },
+      '俄': { name: '俄巴底亚书', order: 31, testament: 'old' },
+      '拿': { name: '约拿书', order: 32, testament: 'old' },
+      '弥': { name: '弥迦书', order: 33, testament: 'old' },
+      '鸿': { name: '那鸿书', order: 34, testament: 'old' },
+      '哈': { name: '哈巴谷书', order: 35, testament: 'old' },
+      '番': { name: '西番雅书', order: 36, testament: 'old' },
+      '该': { name: '哈该书', order: 37, testament: 'old' },
+      '亚': { name: '撒迦利亚书', order: 38, testament: 'old' },
+      '玛': { name: '玛拉基书', order: 39, testament: 'old' },
+      '太': { name: '马太福音', order: 40, testament: 'new' },
+      '可': { name: '马可福音', order: 41, testament: 'new' },
+      '路': { name: '路加福音', order: 42, testament: 'new' },
+      '约': { name: '约翰福音', order: 43, testament: 'new' },
+      '徒': { name: '使徒行传', order: 44, testament: 'new' },
+      '罗': { name: '罗马书', order: 45, testament: 'new' },
+      '林前': { name: '哥林多前书', order: 46, testament: 'new' },
+      '林后': { name: '哥林多后书', order: 47, testament: 'new' },
+      '加': { name: '加拉太书', order: 48, testament: 'new' },
+      '弗': { name: '以弗所书', order: 49, testament: 'new' },
+      '腓': { name: '腓立比书', order: 50, testament: 'new' },
+      '西': { name: '歌罗西书', order: 51, testament: 'new' },
+      '帖前': { name: '帖撒罗尼迦前书', order: 52, testament: 'new' },
+      '帖后': { name: '帖撒罗尼迦后书', order: 53, testament: 'new' },
+      '提前': { name: '提摩太前书', order: 54, testament: 'new' },
+      '提后': { name: '提摩太后书', order: 55, testament: 'new' },
+      '多': { name: '提多书', order: 56, testament: 'new' },
+      '门': { name: '腓利门书', order: 57, testament: 'new' },
+      '来': { name: '希伯来书', order: 58, testament: 'new' },
+      '雅': { name: '雅各书', order: 59, testament: 'new' },
+      '彼前': { name: '彼得前书', order: 60, testament: 'new' },
+      '彼后': { name: '彼得后书', order: 61, testament: 'new' },
+      '约一': { name: '约翰一书', order: 62, testament: 'new' },
+      '约二': { name: '约翰二书', order: 63, testament: 'new' },
+      '约三': { name: '约翰三书', order: 64, testament: 'new' },
+      '犹': { name: '犹大书', order: 65, testament: 'new' },
+      '启': { name: '启示录', order: 66, testament: 'new' }
+    };
+
+    // Application state
+    const state = {
+      verses: [],
+      groups: [],
+      currentView: 'all',
+      searchQuery: '',
+      filteredVerses: []
+    };
+
+    // DOM elements
+    const elements = {
+      tabs: document.querySelectorAll('.tab'),
+      viewAll: document.getElementById('view-all'),
+      viewGroups: document.getElementById('view-groups'),
+      viewBooks: document.getElementById('view-books'),
+      searchInput: document.getElementById('searchInput')
+    };
+
+    // Parse scripture reference
+    function parseReference(reference) {
+      if (!reference) return null;
+      
+      // Match patterns like "太6:9-13", "约一5:11~12", "诗119:9,11"
+      const match = reference.match(/^(.+?)(\d+):(.+)$/);
+      if (!match) return null;
+      
+      const book = match[1].trim();
+      const chapter = parseInt(match[2]);
+      const versePart = match[3].trim();
+      
+      return {
+        book,
+        chapter,
+        verses: versePart,
+        bookInfo: BOOK_MAPPING[book] || { name: book, order: 999, testament: 'unknown' }
+      };
+    }
+
+    // Load verse data
+    async function loadVerses() {
+      try {
+        // Try to scan verses directory first
+        let verseFiles = [];
+        try {
+          const res = await fetch("./verses/");
+          if (res.ok) {
+            const html = await res.text();
+            const doc = new DOMParser().parseFromString(html, "text/html");
+            const links = Array.from(doc.querySelectorAll("a"));
+            verseFiles = links
+              .map(a => decodeURIComponent(a.getAttribute("href") || "").trim())
+              .filter(href => href.toLowerCase().endsWith(".json"))
+              .filter(href => !href.includes("/"))
+              .sort()
+              .map(file => `verses/${file}`);
+          }
+        } catch (e) {
+          console.log("Could not scan verses directory, falling back to groups.json");
+        }
+
+        // Fallback to groups.json
+        if (verseFiles.length === 0) {
+          const groupRes = await fetch("./groups.json");
+          if (!groupRes.ok) throw new Error("Cannot load groups.json");
+          const groups = await groupRes.json();
+          verseFiles = Array.isArray(groups) 
+            ? groups.map(group => group?.file || "").filter(Boolean)
+            : [];
+        }
+
+        if (verseFiles.length === 0) {
+          throw new Error("No verse files found");
+        }
+
+        // Load all verse files
+        const allVerses = [];
+        for (const file of verseFiles) {
+          try {
+            const res = await fetch(`./${file}`);
+            if (!res.ok) continue;
+            const data = await res.json();
+            if (Array.isArray(data)) {
+              const normalizedVerses = data
+                .map(item => ({
+                  reference: String(item.reference || item["出处"] || "").trim(),
+                  text: String(item.text || item["内容"] || "").trim(),
+                  sourceFile: file
+                }))
+                .filter(item => item.reference && item.text);
+              
+              allVerses.push(...normalizedVerses);
+            }
+          } catch (e) {
+            console.warn(`Failed to load ${file}:`, e);
+          }
+        }
+
+        // Parse and enhance verses
+        state.verses = allVerses.map(verse => {
+          const parsed = parseReference(verse.reference);
+          return {
+            ...verse,
+            parsed
+          };
+        });
+
+        // Load groups data
+        try {
+          const groupRes = await fetch("./groups.json");
+          if (groupRes.ok) {
+            state.groups = await groupRes.json();
+          }
+        } catch (e) {
+          console.warn("Could not load groups.json:", e);
+          state.groups = [];
+        }
+
+        state.filteredVerses = [...state.verses];
+        renderCurrentView();
+        
+      } catch (error) {
+        console.error("Failed to load verses:", error);
+        showError("加载失败：请确认 verses/ 目录下有 JSON 文件，或提供 groups.json");
+      }
+    }
+
+    // Render verses in "All" view
+    function renderAllView() {
+      const container = elements.viewAll;
+      
+      if (state.filteredVerses.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">📖</div>
+            <div>没有找到经文</div>
+          </div>
+        `;
+        return;
+      }
+
+      const html = state.filteredVerses
+        .map(verse => `
+          <div class="verse-card">
+            <div class="verse-reference">${verse.reference}</div>
+            <div class="verse-text">${verse.text}</div>
+          </div>
+        `)
+        .join('');
+
+      container.innerHTML = html;
+    }
+
+    // Render verses in "Groups" view
+    function renderGroupsView() {
+      const container = elements.viewGroups;
+      
+      if (state.groups.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">📚</div>
+            <div>没有分组数据</div>
+          </div>
+        `;
+        return;
+      }
+
+      const html = state.groups
+        .map(group => {
+          // Find verses for this group
+          const groupVerses = state.filteredVerses.filter(verse => 
+            verse.sourceFile === group.file
+          );
+          
+          return `
+            <div class="group-section">
+              <div class="group-header">${group.name} (${groupVerses.length})</div>
+              <div class="group-verses">
+                ${groupVerses.map(verse => `
+                  <div class="verse-card">
+                    <div class="verse-reference">${verse.reference}</div>
+                    <div class="verse-text">${verse.text}</div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `;
+        })
+        .join('');
+
+      container.innerHTML = html;
+    }
+
+    // Render verses in "Books" view
+    function renderBooksView() {
+      const container = elements.viewBooks;
+      
+      // Group verses by book
+      const bookGroups = {};
+      state.filteredVerses.forEach(verse => {
+        if (verse.parsed) {
+          const bookKey = verse.parsed.book;
+          if (!bookGroups[bookKey]) {
+            bookGroups[bookKey] = [];
+          }
+          bookGroups[bookKey].push(verse);
+        }
+      });
+
+      // Sort books by biblical order
+      const sortedBooks = Object.keys(bookGroups).sort((a, b) => {
+        const orderA = BOOK_MAPPING[a]?.order || 999;
+        const orderB = BOOK_MAPPING[b]?.order || 999;
+        return orderA - orderB;
+      });
+
+      if (sortedBooks.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">📜</div>
+            <div>没有找到书卷</div>
+          </div>
+        `;
+        return;
+      }
+
+      const html = sortedBooks
+        .map(bookKey => {
+          const verses = bookGroups[bookKey];
+          const bookInfo = BOOK_MAPPING[bookKey];
+          const bookName = bookInfo?.name || bookKey;
+          
+          // Sort verses by chapter and verse
+          const sortedVerses = verses.sort((a, b) => {
+            if (a.parsed.chapter !== b.parsed.chapter) {
+              return a.parsed.chapter - b.parsed.chapter;
+            }
+            // For verse sorting, we'll keep the original order for now
+            return 0;
+          });
+
+          return `
+            <div class="book-section">
+              <div class="book-header">${bookName} (${verses.length})</div>
+              ${sortedVerses.map(verse => `
+                <div class="verse-card">
+                  <div class="verse-reference">${verse.reference}</div>
+                  <div class="verse-text">${verse.text}</div>
+                </div>
+              `).join('')}
+            </div>
+          `;
+        })
+        .join('');
+
+      container.innerHTML = html;
+    }
+
+    // Search functionality
+    function performSearch(query) {
+      state.searchQuery = query.toLowerCase().trim();
+      
+      if (state.searchQuery === '') {
+        state.filteredVerses = [...state.verses];
+      } else {
+        state.filteredVerses = state.verses.filter(verse => 
+          verse.reference.toLowerCase().includes(state.searchQuery) ||
+          verse.text.toLowerCase().includes(state.searchQuery)
+        );
+      }
+      
+      renderCurrentView();
+    }
+
+    // Render current view
+    function renderCurrentView() {
+      switch (state.currentView) {
+        case 'all':
+          renderAllView();
+          break;
+        case 'groups':
+          renderGroupsView();
+          break;
+        case 'books':
+          renderBooksView();
+          break;
+      }
+    }
+
+    // Switch tab
+    function switchTab(view) {
+      state.currentView = view;
+      
+      // Update tab appearance
+      elements.tabs.forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.view === view);
+      });
+      
+      // Update content visibility
+      document.querySelectorAll('.view-content').forEach(content => {
+        content.classList.toggle('active', content.id === `view-${view}`);
+      });
+      
+      renderCurrentView();
+    }
+
+    // Show error message
+    function showError(message) {
+      document.querySelectorAll('.view-content').forEach(content => {
+        content.innerHTML = `<div class="error">${message}</div>`;
+      });
+    }
+
+    // Event listeners
+    elements.tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        switchTab(tab.dataset.view);
+      });
+    });
+
+    elements.searchInput.addEventListener('input', (e) => {
+      performSearch(e.target.value);
+    });
+
+    // Initialize
+    loadVerses();
+  </script>
+</body>
+</html>
