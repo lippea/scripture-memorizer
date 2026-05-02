@@ -17,19 +17,21 @@
     .header {
       background: #fff;
       border-bottom: 1px solid #e5e7eb;
-      padding: 12px 16px;
       display: flex;
       justify-content: space-between;
       align-items: center;
       position: sticky;
       top: 0;
       z-index: 100;
+      max-width: 760px;
+      margin: 0 auto;
     }
 
     .header h1 {
       margin: 0;
       font-size: 18px;
       font-weight: 600;
+      margin: 12px 8px;
     }
 
     .nav-link {
@@ -40,6 +42,7 @@
       border: 1px solid #e5e7eb;
       border-radius: 6px;
       background: #fafafa;
+      margin: 12px 8px;
     }
 
     .nav-link:hover {
@@ -92,7 +95,7 @@
     }
 
     .verse-checkbox {
-      margin: 4px 4px 0 0;
+      margin: 0;
     }
 
     .verse-content {
@@ -102,8 +105,10 @@
     .verse-reference {
       font-weight: 600;
       color: #111827;
-      margin-bottom: 8px;
       font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
 
     .verse-text {
@@ -322,10 +327,7 @@
 </head>
 <body>
   <header class="header">
-    <div style="display: flex; align-items: center; gap: 12px;">
-      
-      <h1>查看经文</h1>
-    </div>
+    <h1>查看经文</h1>
     <button class="hamburger" id="hamburger">☰</button>
     <a href="index.html" class="nav-link">📝 默写练习</a>
   </header>
