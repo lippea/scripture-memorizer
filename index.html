@@ -634,6 +634,18 @@
           throw new Error("empty verse files");
         }
         await loadAllVerses(verseFiles);
+        
+        // Filter verses based on selection from view.html
+        const savedSelected = localStorage.getItem('selectedVerses');
+        if (savedSelected) {
+          const selectedRefs = new Set(JSON.parse(savedSelected));
+          state.verses = state.verses.filter(verse => selectedRefs.has(verse.reference));
+        }
+        
+        if (state.verses.length === 0) {
+          throw new Error("没有选择经文进行默写。请在查看页面选择要默写的经文。");
+        }
+        
         newQuestion();
       } catch (e) {
         els.topRef.textContent = "加载失败";

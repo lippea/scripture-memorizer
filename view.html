@@ -127,6 +127,9 @@
       padding: 16px;
       border-bottom: 1px solid #f3f4f6;
       transition: background 0.2s;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
     }
 
     .verse-card:last-child {
@@ -135,6 +138,15 @@
 
     .verse-card:hover {
       background: #fafafa;
+    }
+
+    .verse-checkbox {
+      margin-top: 2px;
+      flex-shrink: 0;
+    }
+
+    .verse-content {
+      flex: 1;
     }
 
     .verse-reference {
@@ -294,6 +306,11 @@
       <input type="text" class="search-input" id="searchInput" placeholder="搜索经文或出处...">
     </div>
 
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+      <button id="selectAllBtn" class="nav-link" style="margin: 0;">全选/取消全选</button>
+      <div id="selectedCount" style="font-size: 14px; color: #6b7280;">已选择: 0</div>
+    </div>
+
     <nav class="tabs">
       <button class="tab active" data-view="all">全部经文</button>
       <button class="tab" data-view="groups">分组查看</button>
@@ -392,7 +409,8 @@
       groups: [],
       currentView: 'all',
       searchQuery: '',
-      filteredVerses: []
+      filteredVerses: [],
+      selectedVerses: new Set()
     };
 
     // DOM elements
@@ -401,7 +419,9 @@
       viewAll: document.getElementById('view-all'),
       viewGroups: document.getElementById('view-groups'),
       viewBooks: document.getElementById('view-books'),
-      searchInput: document.getElementById('searchInput')
+      searchInput: document.getElementById('searchInput'),
+      selectAllBtn: document.getElementById('selectAllBtn'),
+      selectedCount: document.getElementById('selectedCount')
     };
 
     // Parse scripture reference
@@ -424,7 +444,44 @@
       };
     }
 
-    // Load verse data
+    // Save selected verses to localStorage
+    function saveSelectedVerses() {
+      localStorage.setItem('selectedVerses', JSON.stringify([...state.selectedVerses]));
+    }
+
+    // Update selected count display
+    function updateSelectedCount() {
+      elements.selectedCount.textContent = `已选择: ${state.selectedVerses.size}`;
+    }
+
+    // Toggle verse selection
+    function toggleVerseSelection(reference, checkbox) {
+      if (checkbox.checked) {
+        state.selectedVerses.add(reference);
+      } else {
+        state.selectedVerses.delete(reference);
+      }
+      saveSelectedVerses();
+      updateSelectedCount();
+    }
+
+    // Select/deselect all verses
+    function toggleSelectAll() {
+      const allReferences = state.filteredVerses.map(v => v.reference);
+      const allSelected = allReferences.every(ref => state.selectedVerses.has(ref));
+      
+      if (allSelected) {
+        // Deselect all
+        allReferences.forEach(ref => state.selectedVerses.delete(ref));
+      } else {
+        // Select all
+        allReferences.forEach(ref => state.selectedVerses.add(ref));
+      }
+      
+      saveSelectedVerses();
+      updateSelectedCount();
+      renderCurrentView();
+    }
     async function loadVerses() {
       try {
         // Try to scan verses directory first
@@ -492,6 +549,16 @@
           };
         });
 
+        // Load selected verses from localStorage, default to all selected
+        const savedSelected = localStorage.getItem('selectedVerses');
+        if (savedSelected) {
+          const selectedArray = JSON.parse(savedSelected);
+          state.selectedVerses = new Set(selectedArray);
+        } else {
+          // Default: select all
+          state.selectedVerses = new Set(state.verses.map(v => v.reference));
+        }
+
         // Load groups data
         try {
           const groupRes = await fetch("./groups.json");
@@ -504,6 +571,7 @@
         }
 
         state.filteredVerses = [...state.verses];
+        updateSelectedCount();
         renderCurrentView();
         
       } catch (error) {
@@ -529,8 +597,13 @@
       const html = state.filteredVerses
         .map(verse => `
           <div class="verse-card">
-            <div class="verse-reference">${verse.reference}</div>
-            <div class="verse-text">${verse.text}</div>
+            <input type="checkbox" class="verse-checkbox" 
+                   data-reference="${verse.reference}" 
+                   ${state.selectedVerses.has(verse.reference) ? 'checked' : ''}>
+            <div class="verse-content">
+              <div class="verse-reference">${verse.reference}</div>
+              <div class="verse-text">${verse.text}</div>
+            </div>
           </div>
         `)
         .join('');
@@ -565,8 +638,13 @@
               <div class="group-verses">
                 ${groupVerses.map(verse => `
                   <div class="verse-card">
-                    <div class="verse-reference">${verse.reference}</div>
-                    <div class="verse-text">${verse.text}</div>
+                    <input type="checkbox" class="verse-checkbox" 
+                           data-reference="${verse.reference}" 
+                           ${state.selectedVerses.has(verse.reference) ? 'checked' : ''}>
+                    <div class="verse-content">
+                      <div class="verse-reference">${verse.reference}</div>
+                      <div class="verse-text">${verse.text}</div>
+                    </div>
                   </div>
                 `).join('')}
               </div>
@@ -631,8 +709,13 @@
               <div class="book-header">${bookName} (${verses.length})</div>
               ${sortedVerses.map(verse => `
                 <div class="verse-card">
-                  <div class="verse-reference">${verse.reference}</div>
-                  <div class="verse-text">${verse.text}</div>
+                  <input type="checkbox" class="verse-checkbox" 
+                         data-reference="${verse.reference}" 
+                         ${state.selectedVerses.has(verse.reference) ? 'checked' : ''}>
+                  <div class="verse-content">
+                    <div class="verse-reference">${verse.reference}</div>
+                    <div class="verse-text">${verse.text}</div>
+                  </div>
                 </div>
               `).join('')}
             </div>
@@ -707,6 +790,16 @@
 
     elements.searchInput.addEventListener('input', (e) => {
       performSearch(e.target.value);
+    });
+
+    elements.selectAllBtn.addEventListener('click', toggleSelectAll);
+
+    // Delegate checkbox events
+    document.addEventListener('change', (e) => {
+      if (e.target.classList.contains('verse-checkbox')) {
+        const reference = e.target.dataset.reference;
+        toggleVerseSelection(reference, e.target);
+      }
     });
 
     // Initialize
