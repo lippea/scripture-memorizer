@@ -25,7 +25,7 @@ body {
   margin: 0;
   font-size: 18px;
   font-weight: 600;
-  margin: 12px 8px;
+  margin: 12px 0;
 }
 
 .nav-link {
@@ -225,13 +225,16 @@ body {
 
 .main {
   max-width: 760px;
-  margin: 0 auto;
-  padding: 16px;
+  margin: 8px auto;
+
+  @media (min-width: 760px) {
+    margin: 16px auto;
+  }
 }
 
 /* Verse card styles */
 .verse-card {
-  padding: 16px;
+  padding: 8px;
   border-bottom: 1px solid #f3f4f6;
   transition: background 0.2s;
 }

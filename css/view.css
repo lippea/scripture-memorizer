@@ -8,7 +8,11 @@
 
 .view-content {
   display: none;
-  padding: 16px;
+  padding: 8px;
+  
+  @media (min-width: 760px) {
+    padding: 16px;
+  }
 }
 
 .view-content.active {
@@ -23,7 +27,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 16px;
+  padding: 8px;
   background: #f9fafb;
   border-bottom: 1px solid #f3f4f6;
   font-weight: 600;
@@ -39,6 +43,10 @@
 
 .book-section {
   margin-bottom: 16px;
+}
+
+.group-checkbox {
+  margin: 0;
 }
 
 .book-header {
