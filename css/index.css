@@ -69,10 +69,13 @@
 
 .verse-compose {
   margin: 8px 0;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  gap: 0;
+
+  @media (min-width: 760px) {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 0;
+  }
 }
 
 .prefix-lead {
