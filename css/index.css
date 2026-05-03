@@ -1,12 +1,19 @@
 /* Memory mode specific styles */
-.wrap {
+.wrap,
+.notes {
   max-width: 760px;
   margin: 0 auto;
+}
+
+.wrap {
   background: #fff;
   border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 18px;
-  margin-top: 24px;
+  margin-top: 8px;
+  min-height: 300px;
+
+  @media (min-width: 760px) {
+    border-radius: 12px;
+  }
 }
 
 .wrap h1 {
@@ -15,12 +22,12 @@
 }
 
 .hint {
-  margin: 10px 0 14px;
-  padding: 12px;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  background: #fafafa;
   line-height: 1.6;
+  padding: 8px;
+
+  @media (min-width: 760px) {
+    padding: 16px;
+  }
 }
 
 .ref-line {
@@ -138,6 +145,12 @@
 
 .note {
   margin-top: 10px;
+  padding: 0 8px;
   color: #6b7280;
   font-size: 13px;
+  max-width: 760px;
+
+  @media (min-width: 760px) {
+    padding: 0 16px;
+  }
 }
