@@ -27,7 +27,7 @@
       <div class="menu-tabs">
         <a class="menu-tab" href="index.html" data-mode="both">章节＋开头</a>
         <a class="menu-tab" href="?mode=ref" data-mode="reference">只有章节</a>
-        <a class="menu-tab" href="?mode=full" data-mode="text-only">经文</a>
+        <a class="menu-tab" href="?mode=verse" data-mode="text-only">经文</a>
         <a class="menu-tab" href="?mode=prefix" data-mode="prefix">只有开头</a>
         <a class="menu-tab" href="?mode=random" data-mode="random">随机</a>
       </div>
@@ -82,8 +82,8 @@
 
     const scriptureData = new ScriptureData();
 
-    const URL_TO_HINT = { start: "both", ref: "reference", full: "text-only", prefix: "prefix", random: "random" };
-    const HINT_TO_URL = { both: "start", reference: "ref", "text-only": "full", prefix: "prefix", random: "random" };
+    const URL_TO_HINT = { start: "both", ref: "reference", verse: "text-only", prefix: "prefix", random: "random" };
+    const HINT_TO_URL = { both: "start", reference: "ref", "text-only": "verse", prefix: "prefix", random: "random" };
 
     // --- Persistence ---
     function loadHintMode() {
