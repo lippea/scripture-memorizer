@@ -152,6 +152,6 @@
   max-width: 760px;
 
   @media (min-width: 760px) {
-    padding: 0 16px;
+    padding: 0 12px;
   }
 }
