@@ -89,6 +89,10 @@ body {
   display: flex;
   flex-direction: column;
   overflow-y: auto;
+
+  @media (min-width: 760px) {
+    width: 250px;
+  }
 }
 
 .menu-panel.active {
@@ -102,6 +106,10 @@ body {
   padding: 16px 8px;
   border-bottom: 1px solid #e5e7eb;
   background: #f9fafb;
+
+  @media (min-width: 760px) {
+    padding: 16px;
+  }
 }
 
 .menu-header h3 {
@@ -127,6 +135,10 @@ body {
 .menu-section {
   padding: 20px 8px;
   border-bottom: 1px solid #f3f4f6;
+
+  @media (min-width: 760px) {
+    padding: 16px;
+  }
 }
 
 .menu-section:last-child {
