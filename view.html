@@ -152,21 +152,23 @@
 
     // Render current view
     function renderCurrentView() {
-      let html = '';
-      
+      let container;
       switch (state.currentView) {
         case 'all':
-          html = ViewUtils.renderAllView(state.filteredVerses, selectionManager.selectedVerses);
-          elements.viewAll.innerHTML = html;
+          elements.viewAll.innerHTML = ViewUtils.renderAllView(state.filteredVerses, selectionManager.selectedVerses);
+          container = elements.viewAll;
           break;
         case 'groups':
-          html = ViewUtils.renderGroupsView(state.filteredVerses, state.groups, selectionManager.selectedVerses);
-          elements.viewGroups.innerHTML = html;
+          elements.viewGroups.innerHTML = ViewUtils.renderGroupsView(state.filteredVerses, state.groups, selectionManager.selectedVerses);
+          container = elements.viewGroups;
           break;
         case 'books':
-          html = ViewUtils.renderBooksView(state.filteredVerses, selectionManager.selectedVerses, scriptureData.bookMapping);
-          elements.viewBooks.innerHTML = html;
+          elements.viewBooks.innerHTML = ViewUtils.renderBooksView(state.filteredVerses, selectionManager.selectedVerses, scriptureData.bookMapping);
+          container = elements.viewBooks;
           break;
+      }
+      if (container) {
+        container.querySelectorAll('[data-indeterminate]').forEach(cb => { cb.indeterminate = true; });
       }
     }
 
@@ -177,24 +179,28 @@
         state.verses = data.verses;
         state.groups = data.groups;
         state.filteredVerses = [...state.verses];
-        
         hamburgerMenu.updateSelectedCount(0);
-        switchTab(loadViewMode(), { save: true, closeMenu: false });
-        
       } catch (error) {
         console.error("Failed to load verses:", error);
         const errorMessage = ViewUtils.showError("加载失败：请确认 verses/ 目录下有 JSON 文件，或提供 groups.json");
         document.querySelectorAll('.view-content').forEach(content => {
           content.innerHTML = errorMessage;
         });
+        return;
       }
+      switchTab(loadViewMode(), { save: true, closeMenu: false });
     }
 
     // Checkbox event delegation
     document.addEventListener('change', (e) => {
       if (e.target.classList.contains('verse-checkbox')) {
-        const reference = e.target.dataset.reference;
-        selectionManager.toggle(reference, e.target.checked);
+        selectionManager.toggle(e.target.dataset.reference, e.target.checked);
+      } else if (e.target.classList.contains('group-checkbox')) {
+        const groupVerses = state.filteredVerses.filter(v => v.sourceFile === e.target.dataset.groupFile);
+        selectionManager.toggleAll(groupVerses);
+      } else if (e.target.classList.contains('book-checkbox')) {
+        const bookVerses = state.filteredVerses.filter(v => v.parsed && v.parsed.book === e.target.dataset.bookKey);
+        selectionManager.toggleAll(bookVerses);
       }
     });
 

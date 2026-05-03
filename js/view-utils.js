@@ -42,6 +42,15 @@ class ViewUtils {
       .join('');
   }
 
+  static escapeHtml(text) {
+    return String(text ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
   static renderGroupsView(verses, groups, selectedVerses) {
     if (groups.length === 0) {
       return `
@@ -54,15 +63,22 @@ class ViewUtils {
 
     return groups
       .map(group => {
-        const groupVerses = verses.filter(verse => 
-          verse.sourceFile === group.file
-        );
-        
+        const groupVerses = verses.filter(verse => verse.sourceFile === group.file);
+        const selCount = groupVerses.filter(v => selectedVerses.has(v.reference)).length;
+        const allChecked = groupVerses.length > 0 && selCount === groupVerses.length;
+        const indeterminate = selCount > 0 && selCount < groupVerses.length;
+
         return `
           <div class="group-section">
-            <div class="group-header">${group.name} (${groupVerses.length})</div>
+            <label class="group-header">
+              <input type="checkbox" class="group-checkbox"
+                     data-group-file="${this.escapeHtml(group.file)}"
+                     ${allChecked ? 'checked' : ''}
+                     ${indeterminate ? 'data-indeterminate' : ''}>
+              ${this.escapeHtml(group.name)} (${groupVerses.length})
+            </label>
             <div class="group-verses">
-              ${groupVerses.map(verse => 
+              ${groupVerses.map(verse =>
                 this.renderVerseCard(verse, selectedVerses.has(verse.reference))
               ).join('')}
             </div>
@@ -115,10 +131,20 @@ class ViewUtils {
           return 0;
         });
 
+        const selCount = sortedVerses.filter(v => selectedVerses.has(v.reference)).length;
+        const allChecked = sortedVerses.length > 0 && selCount === sortedVerses.length;
+        const indeterminate = selCount > 0 && selCount < sortedVerses.length;
+
         return `
           <div class="book-section">
-            <div class="book-header">${bookName} (${verses.length})</div>
-            ${sortedVerses.map(verse => 
+            <label class="book-header">
+              <input type="checkbox" class="book-checkbox"
+                     data-book-key="${this.escapeHtml(bookKey)}"
+                     ${allChecked ? 'checked' : ''}
+                     ${indeterminate ? 'data-indeterminate' : ''}>
+              ${this.escapeHtml(bookName)} (${verses.length})
+            </label>
+            ${sortedVerses.map(verse =>
               this.renderVerseCard(verse, selectedVerses.has(verse.reference))
             ).join('')}
           </div>
@@ -229,7 +255,8 @@ class SelectionManager {
   toggleAll(verses) {
     const allSelected = verses.every(verse => this.selectedVerses.has(verse.reference));
     if (allSelected) {
-      this.deselectAll();
+      verses.forEach(verse => this.selectedVerses.delete(verse.reference));
+      this.notifyChange();
     } else {
       this.selectAll(verses);
     }
