@@ -2,13 +2,15 @@
 .view-container {
   background: #fff;
   border: 1px solid #e5e7eb;
-  border-radius: 8px;
   overflow: hidden;
+
+  @media (min-width: 760px) {
+    border-radius: 8px;
+  }
 }
 
 .view-content {
   display: none;
-  padding: 8px;
   
   @media (min-width: 760px) {
     padding: 16px;
