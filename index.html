@@ -25,11 +25,11 @@
     <div class="menu-section">
       <label class="menu-label">选择提示内容</label>
       <div class="menu-tabs">
-        <button class="menu-tab" data-mode="both">章节＋经文开头（最简单）</button>
-        <button class="menu-tab" data-mode="reference">只有章节</button>
-        <button class="menu-tab" data-mode="text-only">完整经文（章节记忆）</button>
-        <button class="menu-tab" data-mode="prefix">只有经文开头</button>
-        <button class="menu-tab" data-mode="random">随机</button>
+        <a class="menu-tab" href="index.html" data-mode="both">章节＋开头</a>
+        <a class="menu-tab" href="?mode=ref" data-mode="reference">只有章节</a>
+        <a class="menu-tab" href="?mode=full" data-mode="text-only">经文</a>
+        <a class="menu-tab" href="?mode=prefix" data-mode="prefix">只有开头</a>
+        <a class="menu-tab" href="?mode=random" data-mode="random">随机</a>
       </div>
     </div>
   </div>
@@ -82,12 +82,28 @@
 
     const scriptureData = new ScriptureData();
 
+    const URL_TO_HINT = { start: "both", ref: "reference", full: "text-only", prefix: "prefix", random: "random" };
+    const HINT_TO_URL = { both: "start", reference: "ref", "text-only": "full", prefix: "prefix", random: "random" };
+
     // --- Persistence ---
     function loadHintMode() {
+      const urlMode = new URLSearchParams(window.location.search).get("mode");
+      if (urlMode && URL_TO_HINT[urlMode]) {
+        const mode = URL_TO_HINT[urlMode];
+        localStorage.setItem(HINT_MODE_KEY, mode);
+        return mode;
+      }
       return localStorage.getItem(HINT_MODE_KEY) || "both";
     }
     function saveHintMode(mode) {
       localStorage.setItem(HINT_MODE_KEY, mode);
+      const url = new URL(window.location);
+      if (mode === "both") {
+        url.searchParams.delete("mode");
+      } else {
+        url.searchParams.set("mode", HINT_TO_URL[mode]);
+      }
+      history.replaceState({}, "", url);
     }
 
     // --- Menu ---
@@ -109,7 +125,8 @@
     els.menuClose.addEventListener("click", closeMenu);
     els.menuOverlay.addEventListener("click", closeMenu);
     els.menuTabs.forEach(tab => {
-      tab.addEventListener("click", () => {
+      tab.addEventListener("click", (e) => {
+        e.preventDefault();
         state.hintMode = tab.dataset.mode;
         saveHintMode(state.hintMode);
         updateMenuActiveTab();
@@ -306,6 +323,7 @@
 
     async function init() {
       state.hintMode = loadHintMode();
+      saveHintMode(state.hintMode); // sync URL with loaded mode
       updateMenuActiveTab();
       try {
         const data = await scriptureData.initialize();

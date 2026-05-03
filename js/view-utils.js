@@ -150,7 +150,8 @@ class HamburgerMenu {
     this.elements.menuOverlay.addEventListener('click', () => this.close());
 
     this.elements.menuTabs.forEach(tab => {
-      tab.addEventListener('click', () => {
+      tab.addEventListener('click', (e) => {
+        e.preventDefault();
         if (this.callbacks.onTabSwitch) {
           this.callbacks.onTabSwitch(tab.dataset.view);
         }

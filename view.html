@@ -32,9 +32,9 @@
     <div class="menu-section">
       <label class="menu-label">查看方式</label>
       <div class="menu-tabs">
-        <button class="menu-tab active" data-view="all">📖 全部经文</button>
-        <button class="menu-tab" data-view="groups">📚 分组查看</button>
-        <button class="menu-tab" data-view="books">📜 按书卷查看</button>
+        <a class="menu-tab" href="?mode=all" data-view="all">📖 全部经文</a>
+        <a class="menu-tab active" href="view.html" data-view="groups">📚 分组查看</a>
+        <a class="menu-tab" href="?mode=book" data-view="books">📜 按书卷查看</a>
       </div>
     </div>
 
@@ -46,11 +46,11 @@
 
   <main class="main">
     <div class="view-container">
-      <div id="view-all" class="view-content active">
+      <div id="view-all" class="view-content">
         <div class="loading">加载中...</div>
       </div>
-      
-      <div id="view-groups" class="view-content">
+
+      <div id="view-groups" class="view-content active">
         <div class="loading">加载中...</div>
       </div>
       
@@ -63,11 +63,36 @@
   <script src="js/data.js"></script>
   <script src="js/view-utils.js"></script>
   <script>
+    const VIEW_MODE_KEY = "scriptureViewMode";
+    const URL_TO_VIEW = { group: "groups", groups: "groups", all: "all", book: "books", books: "books" };
+    const VIEW_TO_URL = { groups: "group", all: "all", books: "book" };
+
+    function loadViewMode() {
+      const urlMode = new URLSearchParams(window.location.search).get("mode");
+      if (urlMode && URL_TO_VIEW[urlMode]) {
+        const mode = URL_TO_VIEW[urlMode];
+        localStorage.setItem(VIEW_MODE_KEY, mode);
+        return mode;
+      }
+      return localStorage.getItem(VIEW_MODE_KEY) || "groups";
+    }
+
+    function saveViewMode(mode) {
+      localStorage.setItem(VIEW_MODE_KEY, mode);
+      const url = new URL(window.location);
+      if (mode === "groups") {
+        url.searchParams.delete("mode");
+      } else {
+        url.searchParams.set("mode", VIEW_TO_URL[mode]);
+      }
+      history.replaceState({}, "", url);
+    }
+
     // Application state
     const state = {
       verses: [],
       groups: [],
-      currentView: 'all',
+      currentView: 'groups',
       searchQuery: '',
       filteredVerses: []
     };
@@ -104,17 +129,18 @@
     });
 
     // Switch tab function
-    function switchTab(view) {
+    function switchTab(view, { save = true, closeMenu = true } = {}) {
       state.currentView = view;
+      if (save) saveViewMode(view);
       hamburgerMenu.updateActiveTab(view);
-      
+
       // Update content visibility
       document.querySelectorAll('.view-content').forEach(content => {
         content.classList.toggle('active', content.id === `view-${view}`);
       });
-      
+
       renderCurrentView();
-      hamburgerMenu.close();
+      if (closeMenu) hamburgerMenu.close();
     }
 
     // Search functionality
@@ -153,7 +179,7 @@
         state.filteredVerses = [...state.verses];
         
         hamburgerMenu.updateSelectedCount(0);
-        renderCurrentView();
+        switchTab(loadViewMode(), { save: true, closeMenu: false });
         
       } catch (error) {
         console.error("Failed to load verses:", error);

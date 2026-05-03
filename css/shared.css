@@ -76,7 +76,7 @@ body {
   position: fixed;
   top: 0;
   left: -300px;
-  width: 280px;
+  width: 150px;
   height: 100%;
   background: #fff;
   z-index: 300;
@@ -95,7 +95,7 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 20px;
+  padding: 16px 8px;
   border-bottom: 1px solid #e5e7eb;
   background: #f9fafb;
 }
@@ -121,7 +121,7 @@ body {
 }
 
 .menu-section {
-  padding: 20px;
+  padding: 20px 8px;
   border-bottom: 1px solid #f3f4f6;
 }
 
@@ -159,7 +159,8 @@ body {
 }
 
 .menu-tab {
-  padding: 10px 12px;
+  display: block;
+  padding: 10px 8px;
   background: none;
   border: none;
   text-align: left;
@@ -167,6 +168,7 @@ body {
   border-radius: 6px;
   font-size: 14px;
   color: #6b7280;
+  text-decoration: none;
   transition: all 0.2s;
 }
 
