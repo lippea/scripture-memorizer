@@ -130,6 +130,12 @@
   font-weight: 600;
 }
 
+.verse-line.hint-display {
+  line-height: 1.8;
+  padding: 6px 0;
+  color: #374151;
+}
+
 .note {
   margin-top: 10px;
   color: #6b7280;

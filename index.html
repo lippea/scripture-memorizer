@@ -10,9 +10,28 @@
 <body>
   <div class="header">
     <div style="display: flex; align-items: center; gap: 12px;">
+      <button class="hamburger" id="menuBtn">☰</button>
       <h1>默写经文</h1>
     </div>
     <a href="view.html" class="nav-link">👁️ 查看经文</a>
+  </div>
+
+  <div class="menu-overlay" id="menuOverlay"></div>
+  <div class="menu-panel" id="menuPanel">
+    <div class="menu-header">
+      <h3>提示模式</h3>
+      <button class="menu-close" id="menuClose">×</button>
+    </div>
+    <div class="menu-section">
+      <label class="menu-label">选择提示内容</label>
+      <div class="menu-tabs">
+        <button class="menu-tab" data-mode="both">章节＋经文开头（最简单）</button>
+        <button class="menu-tab" data-mode="reference">只有章节</button>
+        <button class="menu-tab" data-mode="text-only">完整经文（章节记忆）</button>
+        <button class="menu-tab" data-mode="prefix">只有经文开头</button>
+        <button class="menu-tab" data-mode="random">随机</button>
+      </div>
+    </div>
   </div>
 
   <div class="wrap">
@@ -23,30 +42,98 @@
       </div>
       <div id="bottomRef" class="ref-line"></div>
     </div>
-    <div class="note">题型：随机只显示章节，或只显示经文前几个字（该模式需默写章节+经文）。</div>
-    <div class="note">操作：回车一次检查，检查后再次回车进入下一题。</div>
+    <div class="note" id="modeNote"></div>
+    <div class="note">操作：回车检查，再次回车下一题。</div>
   </div>
 
   <script src="js/data.js"></script>
   <script src="js/memory-utils.js"></script>
   <script>
+    const HINT_MODE_KEY = "scriptureHintMode";
+
     const els = {
       topRef: document.getElementById("topRef"),
       prefixLead: document.getElementById("prefixLead"),
       verseLine: document.getElementById("verseLine"),
-      bottomRef: document.getElementById("bottomRef")
+      bottomRef: document.getElementById("bottomRef"),
+      modeNote: document.getElementById("modeNote"),
+      menuBtn: document.getElementById("menuBtn"),
+      menuOverlay: document.getElementById("menuOverlay"),
+      menuPanel: document.getElementById("menuPanel"),
+      menuClose: document.getElementById("menuClose"),
+      menuTabs: document.querySelectorAll(".menu-tab[data-mode]")
+    };
+
+    const MODE_TASKS = {
+      "both":      "章节＋经文开头 → 默写剩余经文",
+      "reference": "只有章节 → 默写完整经文",
+      "text-only": "完整经文 → 默写章节出处",
+      "prefix":    "只有经文开头 → 默写章节和剩余经文"
     };
 
     const state = {
       verses: [],
       current: null,
-      mode: "reference", // "reference" | "prefix"
+      mode: "both",     // resolved per-question mode
+      hintMode: "both", // user setting (persisted)
       prefixText: "",
       checked: false
     };
 
     const scriptureData = new ScriptureData();
 
+    // --- Persistence ---
+    function loadHintMode() {
+      return localStorage.getItem(HINT_MODE_KEY) || "both";
+    }
+    function saveHintMode(mode) {
+      localStorage.setItem(HINT_MODE_KEY, mode);
+    }
+
+    // --- Menu ---
+    function openMenu() {
+      els.menuOverlay.classList.add("active");
+      els.menuPanel.classList.add("active");
+    }
+    function closeMenu() {
+      els.menuOverlay.classList.remove("active");
+      els.menuPanel.classList.remove("active");
+    }
+    function updateMenuActiveTab() {
+      els.menuTabs.forEach(tab => {
+        tab.classList.toggle("active", tab.dataset.mode === state.hintMode);
+      });
+    }
+
+    els.menuBtn.addEventListener("click", openMenu);
+    els.menuClose.addEventListener("click", closeMenu);
+    els.menuOverlay.addEventListener("click", closeMenu);
+    els.menuTabs.forEach(tab => {
+      tab.addEventListener("click", () => {
+        state.hintMode = tab.dataset.mode;
+        saveHintMode(state.hintMode);
+        updateMenuActiveTab();
+        closeMenu();
+        newQuestion();
+      });
+    });
+
+    // --- Mode resolution ---
+    function resolveHintMode() {
+      if (state.hintMode === "random") {
+        const modes = ["both", "reference", "text-only", "prefix"];
+        return modes[Math.floor(Math.random() * 4)];
+      }
+      return state.hintMode;
+    }
+
+    function updateModeNote() {
+      const label = MODE_TASKS[state.mode] || state.mode;
+      const suffix = state.hintMode === "random" ? "（随机）" : "";
+      els.modeNote.textContent = `当前：${label}${suffix}`;
+    }
+
+    // --- Layout helpers ---
     function syncFillLayoutHeight() {
       if (!els.verseLine.classList.contains("fill-mode")) {
         els.verseLine.style.minHeight = "56px";
@@ -61,6 +148,7 @@
     }
 
     function syncFillUnderline() {
+      if (state.mode === "text-only") return;
       const hasInput = MemoryUtils.normalize(els.verseLine.textContent).length > 0;
       els.verseLine.classList.toggle("has-input", hasInput);
       state.checked = false;
@@ -92,7 +180,7 @@
     }
 
     function syncReferenceMirror() {
-      if (state.mode !== "prefix") return;
+      if (state.mode !== "prefix" && state.mode !== "text-only") return;
       const text = els.topRef.textContent || "";
       const hasInput = MemoryUtils.normalize(text).length > 0;
       els.topRef.classList.toggle("has-input", hasInput);
@@ -104,11 +192,13 @@
     function getExpectedCandidates() {
       if (!state.current) return [""];
       if (state.mode === "reference") return [state.current.text];
+      if (state.mode === "text-only") return [state.current.reference];
+      // "both" and "prefix": remaining text after prefix
       return [state.current.text.slice(state.prefixText.length)];
     }
 
     function applyInlineDiffColoring() {
-      if (!state.current) return;
+      if (!state.current || state.mode === "text-only") return;
       const rawUserInput = els.verseLine.textContent || "";
       const rawUser = state.mode === "prefix"
         ? MemoryUtils.stripLeadingPromptText(rawUserInput, state.prefixText)
@@ -120,7 +210,8 @@
     }
 
     function applyReferenceDiffColoring() {
-      if (!state.current || state.mode !== "prefix") return;
+      if (!state.current) return;
+      if (state.mode !== "prefix" && state.mode !== "text-only") return;
       const rawRef = els.topRef.textContent || "";
       const expected = state.current.reference || "";
       const html = MemoryUtils.renderComparedInput(rawRef, expected);
@@ -134,38 +225,62 @@
     function newQuestion() {
       if (!state.verses.length) return;
       state.current = MemoryUtils.randomItem(state.verses);
-      state.mode = Math.random() < 0.5 ? "reference" : "prefix";
+      state.mode = resolveHintMode();
       state.prefixText = "";
 
       const verse = state.current;
       const fullText = verse.text;
       const prefixLen = Math.max(4, Math.min(12, Math.floor(fullText.length * 0.18)));
 
-      els.verseLine.classList.add("fill-mode");
-      els.verseLine.setAttribute("contenteditable", "true");
+      // Reset verseLine
+      els.verseLine.classList.remove("fill-mode", "has-input", "hint-display");
+      els.verseLine.removeAttribute("contenteditable");
+      els.verseLine.removeAttribute("data-placeholder");
+      els.verseLine.textContent = "";
 
-      if (state.mode === "reference") {
+      if (state.mode === "both") {
+        // Show reference + verse beginning; user fills remaining verse
+        state.prefixText = fullText.slice(0, prefixLen);
+        const remainText = fullText.slice(prefixLen);
+        disableReferenceFillMode(verse.reference);
+        els.prefixLead.hidden = false;
+        els.prefixLead.textContent = state.prefixText;
+        els.verseLine.classList.add("fill-mode");
+        els.verseLine.setAttribute("contenteditable", "true");
+        els.verseLine.setAttribute("data-placeholder", MemoryUtils.toBlankLine(remainText));
+      } else if (state.mode === "reference") {
+        // Show only reference; user fills full verse
         disableReferenceFillMode(verse.reference);
         els.prefixLead.hidden = true;
         els.prefixLead.textContent = "";
+        els.verseLine.classList.add("fill-mode");
+        els.verseLine.setAttribute("contenteditable", "true");
         els.verseLine.setAttribute("data-placeholder", MemoryUtils.toBlankLine(fullText));
-        els.verseLine.textContent = "";
-        els.verseLine.classList.remove("has-input");
-      } else {
+      } else if (state.mode === "text-only") {
+        // Show full verse; user fills reference
+        enableReferenceFillMode(verse.reference);
+        els.prefixLead.hidden = true;
+        els.prefixLead.textContent = "";
+        els.verseLine.classList.add("hint-display");
+        els.verseLine.textContent = fullText;
+      } else { // "prefix"
+        // Show only verse beginning; user fills reference + remaining verse
         state.prefixText = fullText.slice(0, prefixLen);
         const remainText = fullText.slice(prefixLen);
         enableReferenceFillMode(verse.reference);
         els.prefixLead.hidden = false;
         els.prefixLead.textContent = state.prefixText;
-        const remainPlaceholder = MemoryUtils.toBlankLine(remainText);
-        els.verseLine.setAttribute("data-placeholder", remainPlaceholder);
-        els.verseLine.textContent = "";
-        els.verseLine.classList.remove("has-input");
+        els.verseLine.classList.add("fill-mode");
+        els.verseLine.setAttribute("contenteditable", "true");
+        els.verseLine.setAttribute("data-placeholder", MemoryUtils.toBlankLine(remainText));
         syncReferenceMirror();
       }
+
       syncFillLayoutHeight();
+      updateModeNote();
       state.checked = false;
-      if (state.mode === "prefix") {
+
+      if (state.mode === "text-only" || state.mode === "prefix") {
         els.topRef.focus();
       } else {
         els.verseLine.focus();
@@ -190,6 +305,8 @@
     }
 
     async function init() {
+      state.hintMode = loadHintMode();
+      updateMenuActiveTab();
       try {
         const data = await scriptureData.initialize();
         state.verses = data.verses;
