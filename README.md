@@ -48,4 +48,4 @@ After push, GitHub Actions deploys the latest version to Pages.
 
 The site URL is usually:
 
-`https://<your-github-username>.github.io/scripture-memorizer/`
+`https://lippea.github.io/scripture-memorizer/`
